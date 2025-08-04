@@ -220,7 +220,6 @@ const SettingsScreen = () => {
       {/* App Info */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
-        
         <SettingRow
           title="About Spoiler Shield"
           subtitle="Version 1.0.0 - Privacy-first spoiler protection"

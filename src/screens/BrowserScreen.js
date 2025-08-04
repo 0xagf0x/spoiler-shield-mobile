@@ -1,198 +1,239 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   SafeAreaView,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
   Alert,
-  ActivityIndicator,
-  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import ProtectedWebView from '../components/ProtectedWebView';
+import ProtectedRedditFeed from '../components/ProtectedRedditFeed';
+import RedditAPI from '../services/RedditAPI';
 
 const BrowserScreen = () => {
-  const [url, setUrl] = useState('https://www.reddit.com');
-  const [currentUrl, setCurrentUrl] = useState('https://www.reddit.com');
-  const [isLoading, setIsLoading] = useState(false);
-  const [canGoBack, setCanGoBack] = useState(false);
-  const [canGoForward, setCanGoForward] = useState(false);
-  const webViewRef = useRef(null);
+  const [selectedSubreddit, setSelectedSubreddit] = useState('all');
+  const [sortType, setSortType] = useState('hot');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSubredditPicker, setShowSubredditPicker] = useState(false);
+  const [popularSubreddits, setPopularSubreddits] = useState([]);
+  const [customSubreddits, setCustomSubreddits] = useState([]);
 
-  const popularSites = [
-    { name: 'Reddit', url: 'https://www.reddit.com', icon: 'logo-reddit' },
-    { name: 'Twitter', url: 'https://twitter.com', icon: 'logo-twitter' },
-    { name: 'YouTube', url: 'https://www.youtube.com', icon: 'logo-youtube' },
-    { name: 'Google', url: 'https://www.google.com', icon: 'search' },
+  const sortOptions = [
+    { key: 'hot', label: 'Hot', icon: 'flame' },
+    { key: 'new', label: 'New', icon: 'time' },
+    { key: 'top', label: 'Top', icon: 'trending-up' },
+    { key: 'rising', label: 'Rising', icon: 'arrow-up' },
   ];
 
-  const isValidUrl = (string) => {
+  useEffect(() => {
+    loadPopularSubreddits();
+    loadCustomSubreddits();
+  }, []);
+
+  const loadPopularSubreddits = async () => {
     try {
-      new URL(string);
-      return true;
-    } catch (_) {
-      // Check if it might be a domain without protocol
-      if (string.includes('.') && !string.includes(' ')) {
-        return true;
+      const subreddits = await RedditAPI.getPopularSubreddits(20);
+      setPopularSubreddits(subreddits);
+    } catch (error) {
+      console.error('Failed to load popular subreddits:', error);
+      // Use default list if API fails
+      setPopularSubreddits(RedditAPI.getDefaultSubreddits());
+    }
+  };
+
+  const loadCustomSubreddits = () => {
+    // Load user's custom subreddits from storage
+    // For now, use some defaults
+    setCustomSubreddits([
+      { name: 'Formula1', title: 'Formula 1' },
+      { name: 'gameofthrones', title: 'Game of Thrones' },
+      { name: 'MarvelStudios', title: 'Marvel Studios' },
+      { name: 'StarWars', title: 'Star Wars' },
+      { name: 'television', title: 'Television' },
+      { name: 'movies', title: 'Movies' },
+    ]);
+  };
+
+  const searchSubreddits = async () => {
+    if (!searchQuery.trim()) {
+      Alert.alert('Error', 'Please enter a subreddit name to search');
+      return;
+    }
+
+    try {
+      const results = await RedditAPI.searchSubreddits(searchQuery);
+      if (results.length > 0) {
+        // Show search results picker
+        Alert.alert(
+          'Search Results',
+          `Found ${results.length} subreddits. Select the first result: r/${results[0].name}?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Select',
+              onPress: () => {
+                setSelectedSubreddit(results[0].name);
+                setSearchQuery('');
+                setShowSubredditPicker(false);
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('No Results', 'No subreddits found with that name');
       }
-      return false;
+    } catch (error) {
+      Alert.alert('Error', 'Failed to search subreddits');
     }
   };
 
-  const formatUrl = (input) => {
-    if (!input) return '';
-    
-    // If it already has a protocol, use as-is
-    if (input.startsWith('http://') || input.startsWith('https://')) {
-      return input;
-    }
-    
-    // If it looks like a domain, add https://
-    if (input.includes('.') && !input.includes(' ')) {
-      return `https://${input}`;
-    }
-    
-    // Otherwise, search Google
-    return `https://www.google.com/search?q=${encodeURIComponent(input)}`;
+  const selectSubreddit = (subredditName) => {
+    setSelectedSubreddit(subredditName);
+    setShowSubredditPicker(false);
   };
 
-  const handleNavigate = () => {
-    const formattedUrl = formatUrl(url);
-    setCurrentUrl(formattedUrl);
-  };
+  const renderSubredditPicker = () => {
+    if (!showSubredditPicker) return null;
 
-  const handleQuickNavigation = (siteUrl) => {
-    setUrl(siteUrl);
-    setCurrentUrl(siteUrl);
-  };
+    return (
+      <View style={styles.pickerOverlay}>
+        <View style={styles.pickerContainer}>
+          <View style={styles.pickerHeader}>
+            <Text style={styles.pickerTitle}>Select Subreddit</Text>
+            <TouchableOpacity onPress={() => setShowSubredditPicker(false)}>
+              <Ionicons name="close" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
 
-  const handleLoadStart = (navState) => {
-    setIsLoading(true);
-    setCanGoBack(navState.canGoBack);
-    setCanGoForward(navState.canGoForward);
-    setUrl(navState.url);
-  };
+          {/* Search */}
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search subreddits..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={searchSubreddits}
+            />
+            <TouchableOpacity style={styles.searchButton} onPress={searchSubreddits}>
+              <Ionicons name="search" size={20} color="white" />
+            </TouchableOpacity>
+          </View>
 
-  const handleLoadEnd = (navState) => {
-    setIsLoading(false);
-    setCanGoBack(navState.canGoBack);
-    setCanGoForward(navState.canGoForward);
-    setUrl(navState.url);
-  };
+          <ScrollView style={styles.subredditList}>
+            {/* Default options */}
+            <Text style={styles.sectionTitle}>Popular</Text>
+            <TouchableOpacity
+              style={styles.subredditItem}
+              onPress={() => selectSubreddit('all')}
+            >
+              <Text style={styles.subredditName}>r/all</Text>
+              <Text style={styles.subredditDesc}>All of Reddit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.subredditItem}
+              onPress={() => selectSubreddit('popular')}
+            >
+              <Text style={styles.subredditName}>r/popular</Text>
+              <Text style={styles.subredditDesc}>Currently trending</Text>
+            </TouchableOpacity>
 
-  const handleGoBack = () => {
-    webViewRef.current?.goBack();
-  };
+            {/* Custom/Saved Subreddits */}
+            {customSubreddits.length > 0 && (
+              <>
+                <Text style={styles.sectionTitle}>Your Subreddits</Text>
+                {customSubreddits.map((sub) => (
+                  <TouchableOpacity
+                    key={sub.name}
+                    style={styles.subredditItem}
+                    onPress={() => selectSubreddit(sub.name)}
+                  >
+                    <Text style={styles.subredditName}>r/{sub.name}</Text>
+                    <Text style={styles.subredditDesc}>{sub.title}</Text>
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
 
-  const handleGoForward = () => {
-    webViewRef.current?.goForward();
-  };
-
-  const handleRefresh = () => {
-    webViewRef.current?.reload();
-  };
-
-  const showInfo = () => {
-    Alert.alert(
-      'Protected Browsing',
-      'This browser automatically scans web pages for spoilers based on your watchlist. When spoilers are detected, you\'ll see an overlay asking if you want to view the content.\n\nYour browsing data stays private and is only used for spoiler detection.',
-      [{ text: 'Got it!' }]
+            {/* Popular Subreddits */}
+            <Text style={styles.sectionTitle}>Discover</Text>
+            {popularSubreddits.slice(0, 15).map((sub) => (
+              <TouchableOpacity
+                key={sub.name}
+                style={styles.subredditItem}
+                onPress={() => selectSubreddit(sub.name)}
+              >
+                <Text style={styles.subredditName}>r/{sub.name}</Text>
+                <Text style={styles.subredditDesc} numberOfLines={1}>
+                  {sub.description || sub.title}
+                </Text>
+                {sub.subscribers && (
+                  <Text style={styles.subscriberCount}>
+                    {(sub.subscribers / 1000000).toFixed(1)}M members
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#007AFF" />
-      
-      {/* Header with URL bar */}
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.urlContainer}>
-          <TextInput
-            style={styles.urlInput}
-            value={url}
-            onChangeText={setUrl}
-            onSubmitEditing={handleNavigate}
-            placeholder="Enter URL or search..."
-            placeholderTextColor="#999"
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-            returnKeyType="go"
-          />
-          <TouchableOpacity style={styles.goButton} onPress={handleNavigate}>
-            <Ionicons name="arrow-forward" size={20} color="white" />
-          </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.subredditSelector}
+          onPress={() => setShowSubredditPicker(true)}
+        >
+          <Text style={styles.subredditText}>r/{selectedSubreddit}</Text>
+          <Ionicons name="chevron-down" size={20} color="white" />
+        </TouchableOpacity>
+
+        <View style={styles.headerRight}>
+          <Text style={styles.protectedLabel}>🛡️ Protected</Text>
         </View>
-        
-        <TouchableOpacity style={styles.infoButton} onPress={showInfo}>
-          <Ionicons name="information-circle-outline" size={24} color="white" />
-        </TouchableOpacity>
       </View>
 
-      {/* Navigation controls */}
-      <View style={styles.controls}>
-        <TouchableOpacity 
-          style={[styles.controlButton, !canGoBack && styles.disabledButton]} 
-          onPress={handleGoBack}
-          disabled={!canGoBack}
-        >
-          <Ionicons 
-            name="chevron-back" 
-            size={24} 
-            color={canGoBack ? "#007AFF" : "#ccc"} 
-          />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.controlButton, !canGoForward && styles.disabledButton]} 
-          onPress={handleGoForward}
-          disabled={!canGoForward}
-        >
-          <Ionicons 
-            name="chevron-forward" 
-            size={24} 
-            color={canGoForward ? "#007AFF" : "#ccc"} 
-          />
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.controlButton} onPress={handleRefresh}>
-          <Ionicons name="refresh" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        
-        {isLoading && (
-          <ActivityIndicator 
-            size="small" 
-            color="#007AFF" 
-            style={styles.loadingIndicator} 
-          />
-        )}
-        
-        <Text style={styles.protectedLabel}>🛡️ Protected</Text>
-      </View>
-
-      {/* Quick navigation */}
-      <View style={styles.quickNav}>
-        {popularSites.map((site) => (
+      {/* Sort Options */}
+      <View style={styles.sortContainer}>
+        {sortOptions.map((option) => (
           <TouchableOpacity
-            key={site.name}
-            style={styles.quickNavButton}
-            onPress={() => handleQuickNavigation(site.url)}
+            key={option.key}
+            style={[
+              styles.sortButton,
+              sortType === option.key && styles.sortButtonActive
+            ]}
+            onPress={() => setSortType(option.key)}
           >
-            <Ionicons name={site.icon} size={20} color="#007AFF" />
-            <Text style={styles.quickNavText}>{site.name}</Text>
+            <Ionicons 
+              name={option.icon} 
+              size={16} 
+              color={sortType === option.key ? "white" : "#666"} 
+            />
+            <Text style={[
+              styles.sortButtonText,
+              sortType === option.key && styles.sortButtonTextActive
+            ]}>
+              {option.label}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* WebView */}
-      <ProtectedWebView
-        ref={webViewRef}
-        url={currentUrl}
-        onLoadStart={handleLoadStart}
-        onLoadEnd={handleLoadEnd}
+      {/* Protected Reddit Feed */}
+      <ProtectedRedditFeed 
+        subreddit={selectedSubreddit}
+        sort={sortType}
+        key={`${selectedSubreddit}-${sortType}`} // Force re-render on change
       />
+
+      {/* Subreddit Picker Modal */}
+      {renderSubredditPicker()}
     </SafeAreaView>
   );
 };
@@ -205,80 +246,148 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#007AFF',
   },
-  urlContainer: {
-    flex: 1,
+  subredditSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  subredditText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  headerRight: {
+    alignItems: 'flex-end',
+  },
+  protectedLabel: {
+    fontSize: 12,
+    color: 'white',
+    fontWeight: '600',
+  },
+  sortContainer: {
     flexDirection: 'row',
     backgroundColor: 'white',
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  urlInput: {
-    flex: 1,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#333',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
-  goButton: {
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    backgroundColor: '#f5f5f5',
+  },
+  sortButtonActive: {
     backgroundColor: '#007AFF',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 8,
+  },
+  sortButtonText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  sortButtonTextActive: {
+    color: 'white',
+  },
+  pickerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 1000,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  infoButton: {
-    padding: 8,
-  },
-  controls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  pickerContainer: {
     backgroundColor: 'white',
+    width: '90%',
+    maxHeight: '80%',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  controlButton: {
-    padding: 8,
-    marginRight: 12,
+  pickerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
   },
-  disabledButton: {
-    opacity: 0.5,
+  searchContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
-  loadingIndicator: {
-    marginRight: 12,
-  },
-  protectedLabel: {
+  searchInput: {
     flex: 1,
-    textAlign: 'right',
-    fontSize: 12,
-    color: '#4CAF50',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 16,
+  },
+  searchButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginLeft: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  subredditList: {
+    maxHeight: 400,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#f8f9fa',
+  },
+  subredditItem: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  subredditName: {
+    fontSize: 16,
     fontWeight: '600',
-  },
-  quickNav: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  quickNavButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  quickNavText: {
-    fontSize: 10,
     color: '#007AFF',
-    marginTop: 4,
-    fontWeight: '500',
+    marginBottom: 4,
+  },
+  subredditDesc: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 2,
+  },
+  subscriberCount: {
+    fontSize: 12,
+    color: '#999',
   },
 });
 
