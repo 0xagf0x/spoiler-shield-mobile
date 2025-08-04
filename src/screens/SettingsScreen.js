@@ -11,9 +11,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import StorageService from "../services/StorageService";
 import SpoilerDetector from "../services/SpoilerDetector";
+import PlatformManager from "../services/PlatformManager";
 import { BrandColors } from "../constants/Colors";
 
-const SettingsScreen = () => {
+const SettingsScreen = ({ navigation }) => {
   const [settings, setSettings] = useState({
     protectionEnabled: true,
     sensitivityLevel: "medium",
@@ -24,10 +25,12 @@ const SettingsScreen = () => {
     spoilersBlocked: 0,
     postsScanned: 0,
   });
+  const [platformStats, setPlatformStats] = useState({});
 
   useEffect(() => {
     loadSettings();
     loadStats();
+    loadPlatformStats();
   }, []);
 
   const loadSettings = async () => {
@@ -38,6 +41,15 @@ const SettingsScreen = () => {
   const loadStats = async () => {
     const currentStats = await StorageService.getStats();
     setStats(currentStats);
+  };
+
+  const loadPlatformStats = async () => {
+    try {
+      const allStats = PlatformManager.getAllStats();
+      setPlatformStats(allStats);
+    } catch (error) {
+      console.error('Failed to load platform stats:', error);
+    }
   };
 
   const toggleSetting = (key) => {
@@ -62,7 +74,10 @@ const SettingsScreen = () => {
               spoilersBlocked: -stats.spoilersBlocked,
               postsScanned: -stats.postsScanned,
             });
+            // Reset platform stats
+            PlatformManager.resetAllStats();
             await loadStats();
+            await loadPlatformStats();
             Alert.alert("Success", "All data has been cleared");
           },
         },
@@ -103,7 +118,9 @@ const SettingsScreen = () => {
               spoilersBlocked: -stats.spoilersBlocked,
               postsScanned: -stats.postsScanned,
             });
+            PlatformManager.resetAllStats();
             await loadStats();
+            await loadPlatformStats();
             Alert.alert("Success", "Statistics have been reset");
           },
         },
@@ -111,83 +128,33 @@ const SettingsScreen = () => {
     );
   };
 
-  const showAbout = () => {
-    Alert.alert(
-      "About Spoiler Shield",
-      "Spoiler Shield protects you from unwanted spoilers by scanning content for terms in your watchlist.\n\nVersion: 1.0.0\nBuilt with React Native\n\nYour privacy is protected - all analysis happens on your device.",
-      [{ text: "OK" }]
-    );
-  };
-
-  const SettingRow = ({ title, subtitle, onPress, rightComponent, icon }) => (
-    <TouchableOpacity style={styles.settingRow} onPress={onPress}>
+  const SettingRow = ({ title, subtitle, icon, onPress, hasSwitch, switchValue, onSwitchToggle }) => (
+    <TouchableOpacity style={styles.settingRow} onPress={onPress} disabled={hasSwitch}>
       <View style={styles.settingLeft}>
-        {icon && (
-          <Ionicons
-            name={icon}
-            size={24}
-            color="#007AFF"
-            style={styles.settingIcon}
-          />
-        )}
+        <Ionicons name={icon} size={24} color={BrandColors.primary} style={styles.settingIcon} />
         <View style={styles.settingTextContainer}>
           <Text style={styles.settingTitle}>{title}</Text>
           {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
         </View>
       </View>
-      {rightComponent || (
-        <Ionicons name="chevron-forward" size={20} color="#ccc" />
+      {hasSwitch ? (
+        <Switch
+          value={switchValue}
+          onValueChange={onSwitchToggle}
+          trackColor={{ false: "#767577", true: BrandColors.primary }}
+          thumbColor={switchValue ? "#fff" : "#f4f3f4"}
+        />
+      ) : (
+        <Ionicons name="chevron-forward" size={20} color={BrandColors.textMuted} />
       )}
     </TouchableOpacity>
   );
 
   return (
     <ScrollView style={styles.container}>
-      {/* Protection Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Protection Settings</Text>
-
-        <SettingRow
-          title="Spoiler Protection"
-          subtitle={settings.protectionEnabled ? "Active" : "Disabled"}
-          icon="shield-outline"
-          rightComponent={
-            <Switch
-              value={settings.protectionEnabled}
-              onValueChange={() => toggleSetting("protectionEnabled")}
-            />
-          }
-        />
-
-        <SettingRow
-          title="Show Confidence Levels"
-          subtitle="Display detection confidence percentages"
-          icon="analytics-outline"
-          rightComponent={
-            <Switch
-              value={settings.showConfidence}
-              onValueChange={() => toggleSetting("showConfidence")}
-            />
-          }
-        />
-
-        <SettingRow
-          title="Auto-block High Confidence"
-          subtitle="Automatically hide content with >90% confidence"
-          icon="flash-outline"
-          rightComponent={
-            <Switch
-              value={settings.autoBlock}
-              onValueChange={() => toggleSetting("autoBlock")}
-            />
-          }
-        />
-      </View>
-
-      {/* Statistics */}
+      {/* Statistics Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Statistics</Text>
-
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{stats.spoilersBlocked}</Text>
@@ -197,69 +164,96 @@ const SettingsScreen = () => {
             <Text style={styles.statNumber}>{stats.postsScanned}</Text>
             <Text style={styles.statLabel}>Posts Scanned</Text>
           </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>
+              {Object.values(platformStats).reduce((total, stat) => 
+                total + (stat.requestCount || 0), 0
+              )}
+            </Text>
+            <Text style={styles.statLabel}>API Requests</Text>
+          </View>
         </View>
+      </View>
+
+      {/* Platform Settings Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Platforms</Text>
+        
+        <SettingRow
+          title="Platform Settings"
+          subtitle="Configure Twitter, YouTube, Facebook, Instagram & News"
+          icon="apps-outline"
+          onPress={() => navigation.navigate("PlatformSettings")}
+        />
 
         <SettingRow
-          title="Reset Statistics"
-          subtitle="Clear all protection statistics"
-          icon="refresh-outline"
-          onPress={resetStats}
+          title="Test All Platforms"
+          subtitle="Check connection status for all configured platforms"
+          icon="wifi-outline"
+          onPress={async () => {
+            Alert.alert("Testing...", "Checking platform connections...");
+            try {
+              const health = await PlatformManager.getPlatformHealth();
+              const results = Object.entries(health)
+                .map(([platform, status]) => 
+                  `${platform}: ${status.connected ? '✅' : '❌'}`
+                )
+                .join('\n');
+              
+              Alert.alert("Platform Status", results || "No platforms configured");
+            } catch (error) {
+              Alert.alert("Error", "Failed to test platform connections");
+            }
+          }}
+        />
+      </View>
+
+      {/* Protection Settings */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Protection</Text>
+
+        <SettingRow
+          title="Auto-Block Spoilers"
+          subtitle="Automatically blur detected spoilers"
+          icon="shield-checkmark-outline"
+          hasSwitch={true}
+          switchValue={settings.autoBlock}
+          onSwitchToggle={() => toggleSetting("autoBlock")}
+        />
+
+        <SettingRow
+          title="Show Confidence Score"
+          subtitle="Display detection confidence levels"
+          icon="analytics-outline"
+          hasSwitch={true}
+          switchValue={settings.showConfidence}
+          onSwitchToggle={() => toggleSetting("showConfidence")}
         />
       </View>
 
       {/* Data Management */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Data Management</Text>
+        <Text style={styles.sectionTitle}>Data</Text>
 
         <SettingRow
           title="Export Watchlist"
-          subtitle="View and copy your watchlist terms"
+          subtitle="Save your spoiler terms"
           icon="download-outline"
           onPress={exportWatchlist}
         />
 
         <SettingRow
+          title="Reset Statistics"
+          subtitle="Clear all usage statistics"
+          icon="refresh-outline"
+          onPress={resetStats}
+        />
+
+        <SettingRow
           title="Clear All Data"
-          subtitle="Remove watchlist, settings, and statistics"
+          subtitle="Remove all data and reset app"
           icon="trash-outline"
           onPress={clearAllData}
-        />
-      </View>
-
-      {/* App Info */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-        <SettingRow
-          title="About Spoiler Shield"
-          subtitle="Version 1.0.0 - Privacy-first spoiler protection"
-          icon="information-circle-outline"
-          onPress={showAbout}
-        />
-
-        <SettingRow
-          title="Privacy Policy"
-          subtitle="All data stays on your device"
-          icon="lock-closed-outline"
-          onPress={() =>
-            Alert.alert(
-              "Privacy Policy",
-              "Spoiler Shield processes all content locally on your device. No data is sent to external servers. Your watchlist and browsing activity remain completely private.",
-              [{ text: "OK" }]
-            )
-          }
-        />
-
-        <SettingRow
-          title="How It Works"
-          subtitle="Learn about spoiler detection technology"
-          icon="help-circle-outline"
-          onPress={() =>
-            Alert.alert(
-              "How Spoiler Shield Works",
-              "1. You add terms to your watchlist\n2. Content is scanned for these terms\n3. Potential spoilers are detected using pattern matching\n4. You choose whether to view or hide the content\n\nAll processing happens on your device for maximum privacy.",
-              [{ text: "Got it!" }]
-            )
-          }
         />
       </View>
 
@@ -284,6 +278,34 @@ const SettingsScreen = () => {
               )}%\nMatched terms: ${testResults.matchedTerms.join(", ")}`,
               [{ text: "OK" }]
             );
+          }}
+        />
+
+        <SettingRow
+          title="Test Unified Feed"
+          subtitle="Fetch content from all enabled platforms"
+          icon="layers-outline"
+          onPress={async () => {
+            Alert.alert("Loading...", "Fetching unified feed...");
+            try {
+              const result = await PlatformManager.getUnifiedFeed({
+                limit: 5
+              });
+              
+              const summary = `Fetched ${result.totalItems} items from ${
+                Object.keys(result.platformResults).length
+              } platforms:\n\n${
+                Object.entries(result.platformResults)
+                  .map(([platform, data]) => 
+                    `${platform}: ${data.success ? data.count + ' items' : 'failed'}`
+                  )
+                  .join('\n')
+              }`;
+              
+              Alert.alert("Unified Feed Test", summary);
+            } catch (error) {
+              Alert.alert("Error", `Failed to fetch unified feed: ${error.message}`);
+            }
           }}
         />
 
