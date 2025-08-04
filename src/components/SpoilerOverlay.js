@@ -7,6 +7,8 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BrandColors } from "../constants/Colors";
+
 
 const SpoilerOverlay = ({ 
   visible, 
@@ -77,49 +79,45 @@ const SpoilerOverlay = ({
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+   overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(26, 26, 46, 0.95)', // Dark overlay with brand color tint
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
   },
   content: {
-    backgroundColor: 'white',
+    backgroundColor: BrandColors.cardBackground,
     margin: 20,
     padding: 24,
     borderRadius: 16,
-    alignItems: 'center',
-    maxWidth: 320,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    maxWidth: '90%',
+    borderWidth: 1,
+    borderColor: BrandColors.border,
+    shadowColor: BrandColors.primary,
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowRadius: 16,
+    elevation: 12,
   },
   header: {
     alignItems: 'center',
     marginBottom: 20,
   },
-  title: {
+ title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FF5722',
-    marginTop: 8,
+    color: BrandColors.textPrimary,
+    marginLeft: 12,
   },
   details: {
     width: '100%',
     marginBottom: 24,
   },
-  confidence: {
+confidence: {
     fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 16,
+    color: BrandColors.textSecondary,
+    marginBottom: 8,
   },
   confidenceValue: {
     fontWeight: 'bold',
@@ -127,23 +125,24 @@ const styles = StyleSheet.create({
   termsContainer: {
     alignItems: 'center',
   },
-  termsLabel: {
+   termsLabel: {
     fontSize: 14,
-    color: '#666',
+    color: BrandColors.textSecondary,
     marginBottom: 8,
   },
   termChip: {
-    backgroundColor: '#ffebee',
+    backgroundColor: BrandColors.overlayBackground,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    marginVertical: 2,
+    marginRight: 8,
+    marginBottom: 4,
     borderWidth: 1,
-    borderColor: '#FF5722',
+    borderColor: BrandColors.border,
   },
-  termText: {
+ termText: {
+    color: BrandColors.textPrimary,
     fontSize: 12,
-    color: '#FF5722',
     fontWeight: '500',
   },
   moreTerms: {
@@ -157,22 +156,23 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 12,
   },
-  button: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+ button: {
     paddingVertical: 12,
+    paddingHorizontal: 24,
     borderRadius: 8,
-    gap: 8,
+    marginHorizontal: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   keepHiddenButton: {
-    backgroundColor: '#f5f5f5',
-    borderWidth: 1,
-    borderColor: '#ddd',
+    backgroundColor: BrandColors.error,
+    shadowColor: BrandColors.error,
   },
   revealButton: {
-    backgroundColor: '#FF5722',
+    backgroundColor: BrandColors.success,
+    shadowColor: BrandColors.success,
   },
   keepHiddenText: {
     color: '#666',
@@ -188,6 +188,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
     lineHeight: 14,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 

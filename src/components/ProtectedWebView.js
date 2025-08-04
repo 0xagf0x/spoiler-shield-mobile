@@ -3,6 +3,8 @@ import { View, StyleSheet, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import SpoilerOverlay from './SpoilerOverlay';
 import SpoilerDetector from '../services/SpoilerDetector';
+import { BrandColors } from "../constants/Colors";
+
 
 const ProtectedWebView = ({ url, onLoadStart, onLoadEnd }) => {
   const [showSpoilerOverlay, setShowSpoilerOverlay] = useState(false);
@@ -194,11 +196,13 @@ const ProtectedWebView = ({ url, onLoadStart, onLoadEnd }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+ container: {
     flex: 1,
+    backgroundColor: BrandColors.background,
   },
   webview: {
     flex: 1,
+    backgroundColor: BrandColors.background,
   },
 });
 

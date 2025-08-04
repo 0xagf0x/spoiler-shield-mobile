@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,18 +6,19 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  RefreshControl
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
-import StorageService from '../services/StorageService';
-import SpoilerDetector from '../services/SpoilerDetector';
+  RefreshControl,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import StorageService from "../services/StorageService";
+import SpoilerDetector from "../services/SpoilerDetector";
+import { BrandColors } from "../constants/Colors";
 
 const HomeScreen = ({ navigation }) => {
   const [stats, setStats] = useState({
     spoilersBlocked: 0,
     postsScanned: 0,
-    lastScanDate: new Date().toISOString()
+    lastScanDate: new Date().toISOString(),
   });
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [isEnabled, setIsEnabled] = useState(true);
@@ -26,9 +27,9 @@ const HomeScreen = ({ navigation }) => {
   const loadData = useCallback(async () => {
     const [currentStats, watchlist] = await Promise.all([
       StorageService.getStats(),
-      StorageService.getWatchlist()
+      StorageService.getWatchlist(),
     ]);
-    
+
     setStats(currentStats);
     setWatchlistCount(watchlist.length);
   }, []);
@@ -49,38 +50,41 @@ const HomeScreen = ({ navigation }) => {
   const toggleProtection = () => {
     setIsEnabled(!isEnabled);
     Alert.alert(
-      'Protection ' + (isEnabled ? 'Disabled' : 'Enabled'),
-      isEnabled 
-        ? 'Spoiler protection is now OFF' 
-        : 'Spoiler protection is now ON'
+      "Protection " + (isEnabled ? "Disabled" : "Enabled"),
+      isEnabled
+        ? "Spoiler protection is now OFF"
+        : "Spoiler protection is now ON"
     );
   };
 
   const setupDefaultWatchlist = async () => {
     const defaultTerms = SpoilerDetector.getDefaultWatchlist();
     const currentWatchlist = await StorageService.getWatchlist();
-    
+
     if (currentWatchlist.length === 0) {
       Alert.alert(
-        'Setup Watchlist',
-        'Would you like to add some popular spoiler terms to get started?',
+        "Setup Watchlist",
+        "Would you like to add some popular spoiler terms to get started?",
         [
-          { text: 'Skip', style: 'cancel' },
+          { text: "Skip", style: "cancel" },
           {
-            text: 'Add Defaults',
+            text: "Add Defaults",
             onPress: async () => {
               for (const term of defaultTerms) {
                 await StorageService.addToWatchlist(term);
               }
               await loadData();
-              Alert.alert('Success!', `Added ${defaultTerms.length} terms to your watchlist`);
-            }
-          }
+              Alert.alert(
+                "Success!",
+                `Added ${defaultTerms.length} terms to your watchlist`
+              );
+            },
+          },
         ]
       );
     } else {
       // Navigate to watchlist if already has terms
-      navigation.navigate('Watchlist');
+      navigation.navigate("Watchlist");
     }
   };
 
@@ -89,26 +93,28 @@ const HomeScreen = ({ navigation }) => {
       "Can't believe Hamilton won the F1 race today!",
       "Just finished watching the latest Marvel movie",
       "The weather is nice today",
-      "House of the Dragon finale was amazing!"
+      "House of the Dragon finale was amazing!",
     ];
-    
+
     let results = [];
     for (const text of testTexts) {
       const result = await SpoilerDetector.analyzeText(text);
       results.push({ text, result });
     }
-    
-    const spoilerCount = results.filter(r => r.result.hasSpoiler).length;
+
+    const spoilerCount = results.filter((r) => r.result.hasSpoiler).length;
     Alert.alert(
-      'Detection Test',
-      `Tested 4 phrases:\n• ${spoilerCount} contained spoilers\n• ${4 - spoilerCount} were clean\n\nCheck your stats!`
+      "Detection Test",
+      `Tested 4 phrases:\n• ${spoilerCount} contained spoilers\n• ${
+        4 - spoilerCount
+      } were clean\n\nCheck your stats!`
     );
-    
+
     await loadData(); // Refresh stats
   };
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -117,16 +123,24 @@ const HomeScreen = ({ navigation }) => {
       {/* Protection Status */}
       <View style={styles.statusCard}>
         <View style={styles.statusHeader}>
-          <Ionicons 
-            name={isEnabled ? "shield-checkmark" : "shield-outline"} 
-            size={32} 
-            color={isEnabled ? "#4CAF50" : "#FF5722"} 
+          <Ionicons
+            name={isEnabled ? "shield-checkmark" : "shield-outline"}
+            size={32}
+            color={isEnabled ? "#4CAF50" : "#FF5722"}
           />
-          <Text style={[styles.statusText, { color: isEnabled ? "#4CAF50" : "#FF5722" }]}>
+          <Text
+            style={[
+              styles.statusText,
+              { color: isEnabled ? "#4CAF50" : "#FF5722" },
+            ]}
+          >
             Protection {isEnabled ? "Active" : "Inactive"}
           </Text>
         </View>
-        <TouchableOpacity style={styles.toggleButton} onPress={toggleProtection}>
+        <TouchableOpacity
+          style={styles.toggleButton}
+          onPress={toggleProtection}
+        >
           <Text style={styles.toggleButtonText}>
             {isEnabled ? "Disable" : "Enable"}
           </Text>
@@ -158,19 +172,22 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.cardTitle}>🎯 Your Watchlist</Text>
         <View style={styles.watchlistRow}>
           <Text style={styles.watchlistCount}>
-            {watchlistCount} {watchlistCount === 1 ? 'term' : 'terms'} protected
+            {watchlistCount} {watchlistCount === 1 ? "term" : "terms"} protected
           </Text>
-          <TouchableOpacity 
-            style={styles.manageButton} 
-            onPress={() => navigation.navigate('Watchlist')}
+          <TouchableOpacity
+            style={styles.manageButton}
+            onPress={() => navigation.navigate("Watchlist")}
           >
             <Text style={styles.manageButtonText}>
-              {watchlistCount === 0 ? 'Setup' : 'Manage'}
+              {watchlistCount === 0 ? "Setup" : "Manage"}
             </Text>
           </TouchableOpacity>
         </View>
         {watchlistCount === 0 && (
-          <TouchableOpacity style={styles.setupButton} onPress={setupDefaultWatchlist}>
+          <TouchableOpacity
+            style={styles.setupButton}
+            onPress={setupDefaultWatchlist}
+          >
             <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
             <Text style={styles.setupButtonText}>Add Popular Terms</Text>
           </TouchableOpacity>
@@ -180,26 +197,26 @@ const HomeScreen = ({ navigation }) => {
       {/* Quick Actions */}
       <View style={styles.actionsCard}>
         <Text style={styles.cardTitle}>⚡ Quick Actions</Text>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => navigation.navigate('Browser')}
+          onPress={() => navigation.navigate("Browser")}
         >
           <Ionicons name="globe-outline" size={24} color="#007AFF" />
           <Text style={styles.actionText}>Protected Browsing</Text>
           <Ionicons name="chevron-forward" size={20} color="#007AFF" />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => navigation.navigate('Watchlist')}
+          onPress={() => navigation.navigate("Watchlist")}
         >
           <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
           <Text style={styles.actionText}>Manage Watchlist</Text>
           <Ionicons name="chevron-forward" size={20} color="#007AFF" />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.actionButton}
           onPress={testSpoilerDetection}
         >
@@ -213,8 +230,9 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>ℹ️ How It Works</Text>
         <Text style={styles.infoText}>
-          Spoiler Shield scans content for terms in your watchlist and blocks potential spoilers before you see them. 
-          Add terms for shows, sports, or anything you want to avoid spoilers for.
+          Spoiler Shield scans content for terms in your watchlist and blocks
+          potential spoilers before you see them. Add terms for shows, sports,
+          or anything you want to avoid spoilers for.
         </Text>
       </View>
     </ScrollView>
@@ -224,49 +242,53 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: BrandColors.background,
   },
   statusCard: {
-    backgroundColor: 'white',
+    backgroundColor: BrandColors.cardBackground,
     margin: 16,
     marginBottom: 8,
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   statusHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   statusText: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 12,
   },
   toggleButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
+  },
+  toggleButtonDisabled: {
+    backgroundColor: BrandColors.error,
+    shadowColor: BrandColors.error,
   },
   toggleButtonText: {
-    color: 'white',
-    fontWeight: '600',
+    color: "white",
+    fontWeight: "600",
     fontSize: 16,
   },
   statsCard: {
-    backgroundColor: 'white',
+    backgroundColor: BrandColors.cardBackground,
     margin: 16,
     marginVertical: 8,
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -274,113 +296,118 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 16,
-    color: '#333',
+    color: BrandColors.textPrimary,
   },
   statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: 12,
   },
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statNumber: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#007AFF',
+    fontWeight: "bold",
+    color: BrandColors.primary, // Brand violet
   },
   statLabel: {
     fontSize: 14,
-    color: '#666',
+    color: BrandColors.textSecondary,
     marginTop: 4,
   },
   lastScanText: {
     fontSize: 12,
-    color: '#999',
-    textAlign: 'center',
-    fontStyle: 'italic',
+    color: "#999",
+    textAlign: "center",
+    fontStyle: "italic",
   },
   watchlistCard: {
-    backgroundColor: 'white',
+    backgroundColor: BrandColors.cardBackground,
     margin: 16,
     marginVertical: 8,
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   watchlistRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   watchlistCount: {
     fontSize: 16,
-    color: '#666',
+    color: BrandColors.textSecondary,
   },
   manageButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: BrandColors.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
+    shadowColor: BrandColors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   manageButtonText: {
-    color: 'white',
-    fontWeight: '600',
+    color: "white",
+    fontWeight: "600",
   },
   setupButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f0f8ff',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f0f8ff",
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: "#007AFF",
   },
   setupButtonText: {
-    color: '#007AFF',
-    fontWeight: '600',
+    color: "#007AFF",
+    fontWeight: "600",
     marginLeft: 8,
   },
   actionsCard: {
-    backgroundColor: 'white',
+    backgroundColor: BrandColors.cardBackground,
     margin: 16,
     marginVertical: 8,
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
   actionText: {
     flex: 1,
     fontSize: 16,
     marginLeft: 12,
-    color: '#333',
+    color: "#fff",
   },
   infoCard: {
-    backgroundColor: 'white',
+    backgroundColor: BrandColors.cardBackground,
     margin: 16,
     marginVertical: 8,
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -388,13 +415,13 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: '#fff',
     marginBottom: 8,
   },
   infoText: {
     fontSize: 14,
-    color: '#666',
+    color: BrandColors.textPrimary,
     lineHeight: 20,
   },
 });

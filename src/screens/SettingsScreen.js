@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,15 +7,16 @@ import {
   ScrollView,
   Switch,
   Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import StorageService from '../services/StorageService';
-import SpoilerDetector from '../services/SpoilerDetector';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import StorageService from "../services/StorageService";
+import SpoilerDetector from "../services/SpoilerDetector";
+import { BrandColors } from "../constants/Colors";
 
 const SettingsScreen = () => {
   const [settings, setSettings] = useState({
     protectionEnabled: true,
-    sensitivityLevel: 'medium',
+    sensitivityLevel: "medium",
     showConfidence: true,
     autoBlock: true,
   });
@@ -40,95 +41,103 @@ const SettingsScreen = () => {
   };
 
   const toggleSetting = (key) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      [key]: !prev[key]
+      [key]: !prev[key],
     }));
   };
 
   const clearAllData = () => {
     Alert.alert(
-      'Clear All Data',
-      'This will remove your watchlist, settings, and statistics. This action cannot be undone.',
+      "Clear All Data",
+      "This will remove your watchlist, settings, and statistics. This action cannot be undone.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Clear All',
-          style: 'destructive',
+          text: "Clear All",
+          style: "destructive",
           onPress: async () => {
             await StorageService.saveWatchlist([]);
-            await StorageService.updateStats({ 
-              spoilersBlocked: -stats.spoilersBlocked, 
-              postsScanned: -stats.postsScanned 
+            await StorageService.updateStats({
+              spoilersBlocked: -stats.spoilersBlocked,
+              postsScanned: -stats.postsScanned,
             });
             await loadStats();
-            Alert.alert('Success', 'All data has been cleared');
-          }
-        }
+            Alert.alert("Success", "All data has been cleared");
+          },
+        },
       ]
     );
   };
 
   const exportWatchlist = async () => {
     const watchlist = await StorageService.getWatchlist();
-    const exportText = watchlist.join('\n');
-    
-    Alert.alert(
-      'Export Watchlist',
-      `Your watchlist:\n\n${exportText}`,
-      [
-        { text: 'Close' },
-        { 
-          text: 'Copy', 
-          onPress: () => {
-            // In a real app, you'd use Clipboard API
-            Alert.alert('Note', 'Copy functionality would be implemented with @react-native-clipboard/clipboard');
-          }
-        }
-      ]
-    );
+    const exportText = watchlist.join("\n");
+
+    Alert.alert("Export Watchlist", `Your watchlist:\n\n${exportText}`, [
+      { text: "Close" },
+      {
+        text: "Copy",
+        onPress: () => {
+          // In a real app, you'd use Clipboard API
+          Alert.alert(
+            "Note",
+            "Copy functionality would be implemented with @react-native-clipboard/clipboard"
+          );
+        },
+      },
+    ]);
   };
 
   const resetStats = () => {
     Alert.alert(
-      'Reset Statistics',
-      'This will reset all your protection statistics to zero.',
+      "Reset Statistics",
+      "This will reset all your protection statistics to zero.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Reset',
-          style: 'destructive',
+          text: "Reset",
+          style: "destructive",
           onPress: async () => {
-            await StorageService.updateStats({ 
-              spoilersBlocked: -stats.spoilersBlocked, 
-              postsScanned: -stats.postsScanned 
+            await StorageService.updateStats({
+              spoilersBlocked: -stats.spoilersBlocked,
+              postsScanned: -stats.postsScanned,
             });
             await loadStats();
-            Alert.alert('Success', 'Statistics have been reset');
-          }
-        }
+            Alert.alert("Success", "Statistics have been reset");
+          },
+        },
       ]
     );
   };
 
   const showAbout = () => {
     Alert.alert(
-      'About Spoiler Shield',
-      'Spoiler Shield protects you from unwanted spoilers by scanning content for terms in your watchlist.\n\nVersion: 1.0.0\nBuilt with React Native\n\nYour privacy is protected - all analysis happens on your device.',
-      [{ text: 'OK' }]
+      "About Spoiler Shield",
+      "Spoiler Shield protects you from unwanted spoilers by scanning content for terms in your watchlist.\n\nVersion: 1.0.0\nBuilt with React Native\n\nYour privacy is protected - all analysis happens on your device.",
+      [{ text: "OK" }]
     );
   };
 
   const SettingRow = ({ title, subtitle, onPress, rightComponent, icon }) => (
     <TouchableOpacity style={styles.settingRow} onPress={onPress}>
       <View style={styles.settingLeft}>
-        {icon && <Ionicons name={icon} size={24} color="#007AFF" style={styles.settingIcon} />}
+        {icon && (
+          <Ionicons
+            name={icon}
+            size={24}
+            color="#007AFF"
+            style={styles.settingIcon}
+          />
+        )}
         <View style={styles.settingTextContainer}>
           <Text style={styles.settingTitle}>{title}</Text>
           {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
         </View>
       </View>
-      {rightComponent || <Ionicons name="chevron-forward" size={20} color="#ccc" />}
+      {rightComponent || (
+        <Ionicons name="chevron-forward" size={20} color="#ccc" />
+      )}
     </TouchableOpacity>
   );
 
@@ -137,7 +146,7 @@ const SettingsScreen = () => {
       {/* Protection Settings */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Protection Settings</Text>
-        
+
         <SettingRow
           title="Spoiler Protection"
           subtitle={settings.protectionEnabled ? "Active" : "Disabled"}
@@ -145,11 +154,11 @@ const SettingsScreen = () => {
           rightComponent={
             <Switch
               value={settings.protectionEnabled}
-              onValueChange={() => toggleSetting('protectionEnabled')}
+              onValueChange={() => toggleSetting("protectionEnabled")}
             />
           }
         />
-        
+
         <SettingRow
           title="Show Confidence Levels"
           subtitle="Display detection confidence percentages"
@@ -157,11 +166,11 @@ const SettingsScreen = () => {
           rightComponent={
             <Switch
               value={settings.showConfidence}
-              onValueChange={() => toggleSetting('showConfidence')}
+              onValueChange={() => toggleSetting("showConfidence")}
             />
           }
         />
-        
+
         <SettingRow
           title="Auto-block High Confidence"
           subtitle="Automatically hide content with >90% confidence"
@@ -169,7 +178,7 @@ const SettingsScreen = () => {
           rightComponent={
             <Switch
               value={settings.autoBlock}
-              onValueChange={() => toggleSetting('autoBlock')}
+              onValueChange={() => toggleSetting("autoBlock")}
             />
           }
         />
@@ -178,7 +187,7 @@ const SettingsScreen = () => {
       {/* Statistics */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Statistics</Text>
-        
+
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{stats.spoilersBlocked}</Text>
@@ -189,7 +198,7 @@ const SettingsScreen = () => {
             <Text style={styles.statLabel}>Posts Scanned</Text>
           </View>
         </View>
-        
+
         <SettingRow
           title="Reset Statistics"
           subtitle="Clear all protection statistics"
@@ -201,14 +210,14 @@ const SettingsScreen = () => {
       {/* Data Management */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Data Management</Text>
-        
+
         <SettingRow
           title="Export Watchlist"
           subtitle="View and copy your watchlist terms"
           icon="download-outline"
           onPress={exportWatchlist}
         />
-        
+
         <SettingRow
           title="Clear All Data"
           subtitle="Remove watchlist, settings, and statistics"
@@ -226,34 +235,38 @@ const SettingsScreen = () => {
           icon="information-circle-outline"
           onPress={showAbout}
         />
-        
+
         <SettingRow
           title="Privacy Policy"
           subtitle="All data stays on your device"
           icon="lock-closed-outline"
-          onPress={() => Alert.alert(
-            'Privacy Policy',
-            'Spoiler Shield processes all content locally on your device. No data is sent to external servers. Your watchlist and browsing activity remain completely private.',
-            [{ text: 'OK' }]
-          )}
+          onPress={() =>
+            Alert.alert(
+              "Privacy Policy",
+              "Spoiler Shield processes all content locally on your device. No data is sent to external servers. Your watchlist and browsing activity remain completely private.",
+              [{ text: "OK" }]
+            )
+          }
         />
-        
+
         <SettingRow
           title="How It Works"
           subtitle="Learn about spoiler detection technology"
           icon="help-circle-outline"
-          onPress={() => Alert.alert(
-            'How Spoiler Shield Works',
-            '1. You add terms to your watchlist\n2. Content is scanned for these terms\n3. Potential spoilers are detected using pattern matching\n4. You choose whether to view or hide the content\n\nAll processing happens on your device for maximum privacy.',
-            [{ text: 'Got it!' }]
-          )}
+          onPress={() =>
+            Alert.alert(
+              "How Spoiler Shield Works",
+              "1. You add terms to your watchlist\n2. Content is scanned for these terms\n3. Potential spoilers are detected using pattern matching\n4. You choose whether to view or hide the content\n\nAll processing happens on your device for maximum privacy.",
+              [{ text: "Got it!" }]
+            )
+          }
         />
       </View>
 
       {/* Developer Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Developer</Text>
-        
+
         <SettingRow
           title="Test Detection Engine"
           subtitle="Run detection tests with sample content"
@@ -263,17 +276,25 @@ const SettingsScreen = () => {
               "Formula 1 race results: Hamilton wins! Marvel's new movie spoiler: Iron Man returns!"
             );
             Alert.alert(
-              'Detection Test Results',
-              `Spoiler detected: ${testResults.hasSpoiler}\nConfidence: ${Math.round(testResults.confidence * 100)}%\nMatched terms: ${testResults.matchedTerms.join(', ')}`,
-              [{ text: 'OK' }]
+              "Detection Test Results",
+              `Spoiler detected: ${
+                testResults.hasSpoiler
+              }\nConfidence: ${Math.round(
+                testResults.confidence * 100
+              )}%\nMatched terms: ${testResults.matchedTerms.join(", ")}`,
+              [{ text: "OK" }]
             );
           }}
         />
-        
+
         <View style={styles.versionInfo}>
           <Text style={styles.versionText}>Spoiler Shield v1.0.0</Text>
-          <Text style={styles.versionSubtext}>Built with React Native & Expo</Text>
-          <Text style={styles.versionSubtext}>Privacy-first spoiler protection</Text>
+          <Text style={styles.versionSubtext}>
+            Built with React Native & Expo
+          </Text>
+          <Text style={styles.versionSubtext}>
+            Privacy-first spoiler protection
+          </Text>
         </View>
       </View>
     </ScrollView>
@@ -283,39 +304,41 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: BrandColors.background,
   },
   section: {
-    backgroundColor: 'white',
+    backgroundColor: BrandColors.cardBackground,
     marginVertical: 8,
     marginHorizontal: 16,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowColor: BrandColors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: BrandColors.border,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: BrandColors.textPrimary,
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 12,
   },
   settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
   settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   settingIcon: {
@@ -326,49 +349,49 @@ const styles = StyleSheet.create({
   },
   settingTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: "500",
+    color: BrandColors.textPrimary,
   },
   settingSubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: BrandColors.textSecondary,
     marginTop: 2,
   },
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     paddingVertical: 20,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statNumber: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007AFF',
+    fontWeight: "bold",
+    color: BrandColors.primary,
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
+    color: BrandColors.textSecondary,
     marginTop: 4,
   },
   versionInfo: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 20,
     paddingHorizontal: 20,
   },
   versionText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: BrandColors.textPrimary,
     marginBottom: 4,
   },
   versionSubtext: {
     fontSize: 12,
-    color: '#666',
+    color: BrandColors.textMuted,
     marginBottom: 2,
   },
 });
