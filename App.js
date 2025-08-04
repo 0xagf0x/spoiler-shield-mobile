@@ -1,20 +1,69 @@
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+
+import HomeScreen from './src/screens/HomeScreen';
+import WatchlistScreen from './src/screens/WatchlistScreen';
+import BrowserScreen from './src/screens/BrowserScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+
+const Tab = createBottomTabNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+    <NavigationContainer>
       <StatusBar style="auto" />
-    </View>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
+            
+            if (route.name === 'Home') {
+              iconName = focused ? 'shield' : 'shield-outline';
+            } else if (route.name === 'Watchlist') {
+              iconName = focused ? 'list' : 'list-outline';
+            } else if (route.name === 'Browser') {
+              iconName = focused ? 'globe' : 'globe-outline';
+            } else if (route.name === 'Settings') {
+              iconName = focused ? 'settings' : 'settings-outline';
+            }
+            
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: '#007AFF',
+          tabBarInactiveTintColor: 'gray',
+          headerStyle: {
+            backgroundColor: '#007AFF',
+          },
+          headerTintColor: '#fff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        })}
+      >
+        <Tab.Screen 
+          name="Home" 
+          component={HomeScreen}
+          options={{ title: '🛡️ Spoiler Shield' }}
+        />
+        <Tab.Screen 
+          name="Watchlist" 
+          component={WatchlistScreen}
+          options={{ title: 'Watchlist' }}
+        />
+        <Tab.Screen 
+          name="Browser" 
+          component={BrowserScreen}
+          options={{ title: 'Protected Browse' }}
+        />
+        <Tab.Screen 
+          name="Settings" 
+          component={SettingsScreen}
+          options={{ title: 'Settings' }}
+        />
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
