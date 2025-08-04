@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import StorageService from '../services/StorageService';
 import SpoilerDetector from '../services/SpoilerDetector';
+import { BrandColors } from '../constants/Colors';
 
 const WatchlistScreen = () => {
   const [watchlist, setWatchlist] = useState([]);
@@ -238,28 +239,28 @@ const WatchlistScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: BrandColors.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'white',
+    backgroundColor: BrandColors.background,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: BrandColors.textPrimary,
   },
   clearAllText: {
     color: '#FF5722',
     fontWeight: '600',
   },
   addSection: {
-    backgroundColor: 'white',
+    backgroundColor: BrandColors.background,
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
@@ -273,11 +274,11 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: BrandColors.cardBackground,
     borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 16,
-    backgroundColor: '#fafafa',
+    backgroundColor: BrandColors.cardBackground,
   },
   addButton: {
     backgroundColor: '#007AFF',
@@ -296,7 +297,7 @@ const styles = StyleSheet.create({
   },
   suggestionsTitle: {
     fontSize: 14,
-    color: '#666',
+    color: BrandColors.textPrimary,
     marginBottom: 8,
   },
   suggestionsRow: {
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: BrandColors.cardBackground,
     margin: 16,
     borderRadius: 8,
     paddingHorizontal: 12,
@@ -341,7 +342,7 @@ const styles = StyleSheet.create({
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: BrandColors.cardBackground,
     marginHorizontal: 16,
     marginVertical: 4,
     padding: 16,
@@ -358,11 +359,11 @@ const styles = StyleSheet.create({
   itemText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
+    color: BrandColors.textPrimary,
   },
   itemIndex: {
     fontSize: 12,
-    color: '#666',
+    color: BrandColors.textPrimary,
     marginTop: 2,
   },
   removeButton: {
@@ -383,7 +384,7 @@ const styles = StyleSheet.create({
   },
   emptyDescription: {
     fontSize: 16,
-    color: '#666',
+    color: BrandColors.textPrimary,
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
