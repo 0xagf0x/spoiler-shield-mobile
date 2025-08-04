@@ -9,10 +9,11 @@ import {
   RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import StorageService from '../services/StorageService';
 import SpoilerDetector from '../services/SpoilerDetector';
 
-const HomeScreen = () => {
+const HomeScreen = ({ navigation }) => {
   const [stats, setStats] = useState({
     spoilersBlocked: 0,
     postsScanned: 0,
@@ -32,9 +33,12 @@ const HomeScreen = () => {
     setWatchlistCount(watchlist.length);
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -74,7 +78,33 @@ const HomeScreen = () => {
           }
         ]
       );
+    } else {
+      // Navigate to watchlist if already has terms
+      navigation.navigate('Watchlist');
     }
+  };
+
+  const testSpoilerDetection = async () => {
+    const testTexts = [
+      "Can't believe Hamilton won the F1 race today!",
+      "Just finished watching the latest Marvel movie",
+      "The weather is nice today",
+      "House of the Dragon finale was amazing!"
+    ];
+    
+    let results = [];
+    for (const text of testTexts) {
+      const result = await SpoilerDetector.analyzeText(text);
+      results.push({ text, result });
+    }
+    
+    const spoilerCount = results.filter(r => r.result.hasSpoiler).length;
+    Alert.alert(
+      'Detection Test',
+      `Tested 4 phrases:\n• ${spoilerCount} contained spoilers\n• ${4 - spoilerCount} were clean\n\nCheck your stats!`
+    );
+    
+    await loadData(); // Refresh stats
   };
 
   return (
@@ -105,7 +135,7 @@ const HomeScreen = () => {
 
       {/* Stats */}
       <View style={styles.statsCard}>
-        <Text style={styles.cardTitle}>📊 Today's Protection</Text>
+        <Text style={styles.cardTitle}>📊 Protection Stats</Text>
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{stats.spoilersBlocked}</Text>
@@ -116,6 +146,11 @@ const HomeScreen = () => {
             <Text style={styles.statLabel}>Posts Scanned</Text>
           </View>
         </View>
+        {stats.postsScanned > 0 && (
+          <Text style={styles.lastScanText}>
+            Last scan: {new Date(stats.lastScanDate).toLocaleString()}
+          </Text>
+        )}
       </View>
 
       {/* Watchlist Overview */}
@@ -125,38 +160,63 @@ const HomeScreen = () => {
           <Text style={styles.watchlistCount}>
             {watchlistCount} {watchlistCount === 1 ? 'term' : 'terms'} protected
           </Text>
-          {watchlistCount === 0 && (
-            <TouchableOpacity style={styles.setupButton} onPress={setupDefaultWatchlist}>
-              <Text style={styles.setupButtonText}>Setup Now</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity 
+            style={styles.manageButton} 
+            onPress={() => navigation.navigate('Watchlist')}
+          >
+            <Text style={styles.manageButtonText}>
+              {watchlistCount === 0 ? 'Setup' : 'Manage'}
+            </Text>
+          </TouchableOpacity>
         </View>
+        {watchlistCount === 0 && (
+          <TouchableOpacity style={styles.setupButton} onPress={setupDefaultWatchlist}>
+            <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
+            <Text style={styles.setupButtonText}>Add Popular Terms</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Quick Actions */}
       <View style={styles.actionsCard}>
         <Text style={styles.cardTitle}>⚡ Quick Actions</Text>
-        <TouchableOpacity style={styles.actionButton}>
+        
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('Browser')}
+        >
           <Ionicons name="globe-outline" size={24} color="#007AFF" />
-          <Text style={styles.actionText}>Start Protected Browsing</Text>
+          <Text style={styles.actionText}>Protected Browsing</Text>
           <Ionicons name="chevron-forward" size={20} color="#007AFF" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
+        
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('Watchlist')}
+        >
           <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
-          <Text style={styles.actionText}>Add to Watchlist</Text>
+          <Text style={styles.actionText}>Manage Watchlist</Text>
           <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={testSpoilerDetection}
+        >
+          <Ionicons name="flash-outline" size={24} color="#4CAF50" />
+          <Text style={styles.actionText}>Test Detection</Text>
+          <Ionicons name="chevron-forward" size={20} color="#4CAF50" />
         </TouchableOpacity>
       </View>
 
-      {/* Recent Activity */}
-      {stats.spoilersBlocked > 0 && (
-        <View style={styles.activityCard}>
-          <Text style={styles.cardTitle}>🚫 Recent Blocks</Text>
-          <Text style={styles.activityText}>
-            Last scan: {new Date(stats.lastScanDate).toLocaleTimeString()}
-          </Text>
-        </View>
-      )}
+      {/* Status Info */}
+      <View style={styles.infoCard}>
+        <Text style={styles.infoTitle}>ℹ️ How It Works</Text>
+        <Text style={styles.infoText}>
+          Spoiler Shield scans content for terms in your watchlist and blocks potential spoilers before you see them. 
+          Add terms for shows, sports, or anything you want to avoid spoilers for.
+        </Text>
+      </View>
     </ScrollView>
   );
 };
@@ -221,6 +281,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    marginBottom: 12,
   },
   statItem: {
     alignItems: 'center',
@@ -234,6 +295,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 4,
+  },
+  lastScanText: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   watchlistCard: {
     backgroundColor: 'white',
@@ -251,20 +318,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
   },
   watchlistCount: {
     fontSize: 16,
     color: '#666',
   },
-  setupButton: {
-    backgroundColor: '#4CAF50',
+  manageButton: {
+    backgroundColor: '#007AFF',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
   },
-  setupButtonText: {
+  manageButtonText: {
     color: 'white',
     fontWeight: '600',
+  },
+  setupButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f0f8ff',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  setupButtonText: {
+    color: '#007AFF',
+    fontWeight: '600',
+    marginLeft: 8,
   },
   actionsCard: {
     backgroundColor: 'white',
@@ -291,7 +374,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     color: '#333',
   },
-  activityCard: {
+  infoCard: {
     backgroundColor: 'white',
     margin: 16,
     marginVertical: 8,
@@ -303,9 +386,16 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  activityText: {
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  infoText: {
     fontSize: 14,
     color: '#666',
+    lineHeight: 20,
   },
 });
 
