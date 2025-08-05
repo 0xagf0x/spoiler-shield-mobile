@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "880723151238",
+    "project_id": "spoiler-shield-mobile",
+    "storage_bucket": "spoiler-shield-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:880723151238:android:428ea8835d7d902b670407",
+        "android_client_info": {
+          "package_name": "com.oxafg0x.spoilershield"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "880723151238-6nj3ujtvlra01g72l3kgacotck6nc5em.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC16pP0sA5utpumnX4V9Xb0_9zKLWR_nY8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "880723151238-6nj3ujtvlra01g72l3kgacotck6nc5em.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "880723151238-ojn4pg9kc6lrtor4bm26bpt0o8urkug1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.0xafg0x.spoiler-shield"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

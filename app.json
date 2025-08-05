@@ -14,7 +14,8 @@
       "backgroundColor": "#667eea"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.0xagf0x.spoiler-shield"
     },
     "android": {
       "adaptiveIcon": {

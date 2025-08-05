@@ -21,6 +21,15 @@ class PlatformManager {
         enabled: false,
         configured: false
       },
+       google: {
+        id: 'google',
+        name: 'Google Account',
+        icon: 'logo-google',
+        color: '#4285f4',
+        enabled: false,
+        configured: false,
+        authType: 'user_auth' // Different from API platforms
+      },
       twitter: {
         api: TwitterAPI,
         name: 'Twitter/X',
@@ -66,9 +75,43 @@ class PlatformManager {
     this.loadPlatformStates();
   }
 
+  async configureGoogleAuth() {
+    try {
+      // Google auth is always "configured" once dependencies are installed
+      this.platforms.google.configured = true;
+      await this.savePlatformStates();
+      return true;
+    } catch (error) {
+      console.error('Failed to configure Google Auth:', error);
+      return false;
+    }
+  }
+
+  async testGoogleConnection() {
+    try {
+      const user = await GoogleAuthService.getCurrentUser();
+      return !!user;
+    } catch (error) {
+      console.error('Google connection test failed:', error);
+      return false;
+    }
+  }
+
+  // Add this method to handle Google sign-in
+  async signInWithGoogle() {
+    const result = await GoogleAuthService.signIn();
+    if (result.success) {
+      this.platforms.google.enabled = true;
+      this.platforms.google.configured = true;
+      await this.savePlatformStates();
+    }
+    return result;
+  }
+
   /**
    * Load platform enabled/configured states from storage
    */
+
   async loadPlatformStates() {
     try {
       const states = await AsyncStorage.getItem('platform_states');
